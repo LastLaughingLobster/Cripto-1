@@ -5,14 +5,13 @@ import sys
 
 SERVER_ACCESS = ('localhost', 5100)
 
-PUBLIC_PRIME = 433494437
-PUBLIC_ROOT = 821
+PUBLIC_PRIME = 99999996619
+PUBLIC_ROOT = 900000547
 
 PRIVATE_KEY = 0
 PRIVATE_COMMOM_KEY = 0
 
 def client(SERVER_ACCESS):
-
 
     def start():
 
@@ -20,42 +19,52 @@ def client(SERVER_ACCESS):
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as _socket:
 
-            print('connecting to %s port %s' % SERVER_ACCESS, file=sys.stderr)
+            print('connecting to %s port: %s' % SERVER_ACCESS, file=sys.stderr)
             _socket.connect(SERVER_ACCESS)
 
             public_key = PUBLIC_PRIME ** PRIVATE_KEY % PUBLIC_ROOT
 
             public_key = str(public_key)
 
-            print('sending "%s"' % public_key, file=sys.stderr)
+            print('\nSending public key to server "%s"' % public_key, file=sys.stderr)
             _socket.sendall(bytes(public_key, 'utf-8'))
 
             while True:
-                data =  _socket.recv(64)
+                data =  _socket.recv(256)
                 if data:
 
-                    print('received "%s"' % data, file=sys.stderr)
+                    print('\nReceived server public key "%s"' % data.decode('utf-8'), file=sys.stderr)
 
                     data = int(data.decode('utf-8'))
                     PRIVATE_COMMOM_KEY = data ** PRIVATE_KEY % PUBLIC_ROOT
 
-                    print('PRIVATE COMMON KEY == {}'.format(PRIVATE_COMMOM_KEY))
+                    print('\nSESSION TOKEN == {}'.format(PRIVATE_COMMOM_KEY))
 
                     _socket.sendall(bytes('ACK', 'utf-8'))
 
                     break
                 else:
                     break
+
+            print("\n\n\n")
     
-            message = "This message has beeing encrypted"
-            print('Sending message: "%s"' % message, file=sys.stderr)
+            while True:
+                message = input("\nType 256 CHAR message: ")
+                
+                if(len(message) > 256):
+                    continue
+                
+                if(message == 'EXIT'):
+                    break
 
-            message = caesar_cypher(message, PRIVATE_COMMOM_KEY)
-            message = xor_cypher(message, str(PRIVATE_COMMOM_KEY))
+                print('\nSending message: "%s"' % message, file=sys.stderr)
 
-            print('Encrypted format: "%s"'% message, file=sys.stderr)
+                message = caesar_cypher(message, PRIVATE_COMMOM_KEY)
+                message = xor_cypher(message, str(PRIVATE_COMMOM_KEY))
 
-            _socket.sendall(bytes(message, 'utf-8'))
+                print('Encrypted format: "%s"'% message, file=sys.stderr)
+
+                _socket.sendall(bytes(message, 'utf-8'))
 
 
     return start

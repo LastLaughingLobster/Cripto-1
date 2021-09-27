@@ -6,8 +6,11 @@ import sys
 SERVER_PORT = 5100
 SERVER_ADRESS = 'localhost'
 
-PUBLIC_PRIME = 433494437
-PUBLIC_ROOT = 821
+# PUBLIC_PRIME = 433494437
+# PUBLIC_ROOT = 821
+
+PUBLIC_PRIME = 99999996619
+PUBLIC_ROOT = 900000547
 
 PRIVATE_KEY = 0
 PRIVATE_COMMOM_KEY = 0
@@ -40,20 +43,20 @@ def server(SERVER_PORT):
                 #KEY EXCHANGE
                 while True:
 
-                    data = connection.recv(64)
+                    data = connection.recv(256)
                     
                     if data:
                         if(data.decode('utf-8') == "ACK"):
                             break
 
-                        print('Received public key "%s" from Bob' % data, file=sys.stderr)
+                        print('\nReceived public key "%s" from Client' % data.decode('utf-8'), file=sys.stderr)
                     
-                        print('Sending my public key to Bob', file=sys.stderr)
+                        print('\nSending my public key to Client "%s" ' % public_key, file=sys.stderr)
 
                         data = int(data.decode('utf-8'))
                         PRIVATE_COMMOM_KEY = data ** PRIVATE_KEY % PUBLIC_ROOT
 
-                        print('PRIVATE COMMON KEY == {}'.format(PRIVATE_COMMOM_KEY))
+                        print('SESSION TOKEN == {}'.format(PRIVATE_COMMOM_KEY))
 
                         connection.sendall(bytes(public_key, 'UTF-8'))
                     else:
@@ -61,25 +64,28 @@ def server(SERVER_PORT):
                         break
                 #---------------------------------------
 
-                #Receving cripto data
+                #Receving cripto data 
                 while True:
 
-                    data = connection.recv(64)
+                    data = connection.recv(256)
                     
                     if data:
-                        if(data.decode('utf-8') == "ACK"):
-                            break
 
-                        print('Received encrypted message: {}'.format(data), file=sys.stderr)
+                        print('\nEncrypted message: {} '.format(data), file=sys.stderr)
 
                         data = data.decode('utf-8')
                         decrypted_message = xor_cypher(data, str(PRIVATE_COMMOM_KEY))
                         decrypted_message = caesar_cypher(decrypted_message, PRIVATE_COMMOM_KEY, decript=True)
                         
-                        print('Decrypted message: {}'.format(decrypted_message), file=sys.stderr)
-                    else:
-                        print('no more data from', client_address, file=sys.stderr)
-                        break
+                        print('Decrypted message: {} \n'.format(decrypted_message), file=sys.stderr)
+
+                        if(decrypted_message == "ACK"):
+                            break
+
+                        print('Waiting new message...')
+                    # else:
+                    #     print('no more data from', client_address, file=sys.stderr)
+                    #     break
 
     return start
 

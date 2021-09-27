@@ -12,8 +12,6 @@ def xor_cypher(text, key):
         dif = (len(text) - len(key))
         for i in range(dif):
             key += chr((number_key * i) % 128)
-    else:
-        text += ( len(key) - len(text)) * '@'
 
     encrypted_text = bitarray()
 
@@ -43,10 +41,3 @@ def caesar_cypher(text, key, decript=False):
         encryptedText += alphabet[(alphabet.find(char) + key) % len(alphabet)]
         
     return encryptedText
-
-
-# a = caesar_cypher("Batata  !& ~~", 234)
-# b = caesar_cypher(a, 234, True)
-
-# print("ASSSSSSSS ", a)
-# print("BSSSSSSSS", b)
