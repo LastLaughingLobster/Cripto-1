@@ -1,21 +1,25 @@
-from bitarray import bitarray
+from cipher import xor_cypher, caesar_cypher
+from random import randrange
 import socket
 import sys
 
 SERVER_PORT = 5100
 SERVER_ADRESS = 'localhost'
 
-PUBLIC_PRIME = 997
-PUBLIC_ROOT = 821
+# PUBLIC_PRIME = 433494437
+# PUBLIC_ROOT = 821
 
-PRIVATE_KEY = 505
+PUBLIC_PRIME = 99999996619
+PUBLIC_ROOT = 900000547
+
+PRIVATE_KEY = 0
 PRIVATE_COMMOM_KEY = 0
 
 def server(SERVER_PORT):
 
     def start():
 
-        #GEnerate private key
+        PRIVATE_KEY = randrange(1000,9999)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as _socket:
 
@@ -39,20 +43,20 @@ def server(SERVER_PORT):
                 #KEY EXCHANGE
                 while True:
 
-                    data = connection.recv(64)
+                    data = connection.recv(256)
                     
                     if data:
                         if(data.decode('utf-8') == "ACK"):
                             break
 
-                        print('Received public key "%s" from Bob' % data, file=sys.stderr)
+                        print('\nReceived public key "%s" from Client' % data.decode('utf-8'), file=sys.stderr)
                     
-                        print('Sending my public key to Bob', file=sys.stderr)
+                        print('\nSending my public key to Client "%s" ' % public_key, file=sys.stderr)
 
                         data = int(data.decode('utf-8'))
                         PRIVATE_COMMOM_KEY = data ** PRIVATE_KEY % PUBLIC_ROOT
 
-                        print('PRIVATE COMMON KEY == {}'.format(PRIVATE_COMMOM_KEY))
+                        print('SESSION TOKEN == {}'.format(PRIVATE_COMMOM_KEY))
 
                         connection.sendall(bytes(public_key, 'UTF-8'))
                     else:
@@ -60,55 +64,28 @@ def server(SERVER_PORT):
                         break
                 #---------------------------------------
 
-                #Receving cripto data
+                #Receving cripto data 
                 while True:
 
-                    data = connection.recv(32)
+                    data = connection.recv(256)
                     
                     if data:
-                        if(data.decode('utf-8') == "ACK"):
-                            break
 
-                        print('Received encrypted message: ' % data, file=sys.stderr)
+                        print('\nEncrypted message: {} '.format(data), file=sys.stderr)
 
                         data = data.decode('utf-8')
                         decrypted_message = xor_cypher(data, str(PRIVATE_COMMOM_KEY))
+                        decrypted_message = caesar_cypher(decrypted_message, PRIVATE_COMMOM_KEY, decript=True)
                         
-                        print('Decrypted message: {}'.format(decrypted_message), file=sys.stderr)
-                    else:
-                        print('no more data from', client_address, file=sys.stderr)
-                        break
-                
-                
-    
+                        print('Decrypted message: {} \n'.format(decrypted_message), file=sys.stderr)
 
-        
-    def xor_cypher(string, key):
+                        if(decrypted_message == "ACK"):
+                            break
 
-        def xor(bit1, bit2):
-            return (bit1 + bit2) - 2*(bit1*bit2)
-
-        if len(string) > len(key):
-            key += (len(string) - len(key)) * '@'
-        else:
-            string += ( len(key) - len(string)) * '@'
-        
-        out = bitarray()
-
-        bit_string = bitarray()
-        bit_key = bitarray()
-
-        bit_string.frombytes(string.encode('utf-8'))
-        bit_key.frombytes(key.encode('utf-8'))
-
-        for S_bit, K_bit in zip(bit_string, bit_key):
-            out.append(xor(S_bit, K_bit))
-
-        out = bitarray(out.tolist()).tobytes().decode('utf-8')
-
-        return out
-
-            
+                        print('Waiting new message...')
+                    # else:
+                    #     print('no more data from', client_address, file=sys.stderr)
+                    #     break
 
     return start
 
